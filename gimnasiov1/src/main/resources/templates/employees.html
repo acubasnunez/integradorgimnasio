@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="es">
+<head>
+    <meta charset="utf-8" />
+    <title>Gestión de Empleados - FitGym</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body { background: #f5f6f7; }
+        .card-custom { max-width: 1100px; width: 100%; border-radius: 12px; }
+        .badge-role-ADMIN { background:#fd7e14; }
+        .badge-role-GERENTE { background:#198754; }
+        .badge-role-ENTRENADOR { background:#0d6efd; }
+        .badge-role-RECEPCIONISTA { background:#6c757d; }
+        .table-hover tbody tr:hover { background: #fff8e6; }
+    </style>
+</head>
+<body>
+<div class="container d-flex align-items-center justify-content-center min-vh-100 py-4">
+    <div class="card shadow-lg border-0 p-4 card-custom">
+        <h2 class="text-center fw-bold mb-1">Gestión de Empleados</h2>
+        <p class="text-center text-muted mb-4">Crea, edita y asigna roles al personal de FitGym</p>
+
+        <!-- Botón añadir -->
+        <div class="d-flex justify-content-end mb-3">
+            <button class="btn btn-warning text-white" data-bs-toggle="modal" data-bs-target="#addEmployeeModal">
+                <i class="fa fa-user-plus"></i> Añadir Empleado
+            </button>
+        </div>
+
+        <!-- Tabla -->
+        <div class="table-responsive mb-3">
+            <table class="table table-hover align-middle">
+                <thead class="table-light">
+                <tr>
+                    <th>Nombre</th>
+                    <th>Email</th>
+                    <th>Teléfono</th>
+                    <th>Rol</th>
+                    <th>Activo</th>
+                    <th class="text-end">Acciones</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="e : ${employees}">
+                    <td>
+                        <div class="fw-semibold" th:text="${e.firstName + ' ' + e.lastName}">Nombre Apellido</div>
+                    </td>
+                    <td th:text="${e.email}">correo</td>
+                    <td th:text="${e.phone}">teléfono</td>
+                    <td>
+            <span class="badge text-white"
+                  th:classappend="'badge-role-' + ${e.role.name}"
+                  th:text="${e.role.name}">ROL</span>
+                    </td>
+                    <td>
+                        <form th:action="@{/admin/employees/toggle/{id}(id=${e.idemployee})}" method="post">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" th:checked="${e.isActive}" onchange="this.form.submit()">
+                            </div>
+                        </form>
+                    </td>
+                    <td class="text-end">
+                        <button class="btn btn-sm btn-outline-secondary"
+                                data-bs-toggle="modal"
+                                th:data-bs-target="'#editEmployeeModal-' + ${e.idemployee}">
+                            <i class="fa fa-pen"></i>
+                        </button>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Añadir Empleado -->
+<div class="modal fade" id="addEmployeeModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <form th:action="@{/admin/employees/save}" method="post">
+                <div class="modal-header">
+                    <h5 class="modal-title">Añadir Empleado</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label">Nombre</label>
+                        <input type="text" name="firstName" class="form-control" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Apellido</label>
+                        <input type="text" name="lastName" class="form-control" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Email</label>
+                        <input type="email" name="email" class="form-control" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Teléfono</label>
+                        <input type="text" name="phone" class="form-control">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Contraseña</label>
+                        <input type="password" name="passwordHash" class="form-control" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Rol</label>
+                        <select name="role.idroles" class="form-select" required>
+                            <option th:each="r : ${roles}" th:value="${r.idroles}" th:text="${r.name}"></option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-warning text-white">Guardar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Editar Empleado -->
+<div th:each="e : ${employees}" class="modal fade" th:id="'editEmployeeModal-' + ${e.idemployee}" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <form th:action="@{/admin/employees/update}" method="post">
+                <input type="hidden" name="idemployee" th:value="${e.idemployee}">
+                <div class="modal-header">
+                    <h5 class="modal-title">Editar Empleado</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label">Nombre</label>
+                        <input type="text" name="firstName" class="form-control" th:value="${e.firstName}">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Apellido</label>
+                        <input type="text" name="lastName" class="form-control" th:value="${e.lastName}">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Email</label>
+                        <input type="email" name="email" class="form-control" th:value="${e.email}">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Teléfono</label>
+                        <input type="text" name="phone" class="form-control" th:value="${e.phone}">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Rol</label>
+                        <select name="role.idroles" class="form-select">
+                            <option th:each="r : ${roles}" th:value="${r.idroles}" th:text="${r.name}"
+                                    th:selected="${e.role != null and e.role.idroles == r.idroles}"></option>
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Contraseña</label>
+                        <input type="password" name="passwordHash" class="form-control">
+                        <small class="text-muted">Déjalo vacío si no deseas cambiarla</small>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-warning text-white">Actualizar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
